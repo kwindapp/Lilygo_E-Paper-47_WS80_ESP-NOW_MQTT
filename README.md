@@ -1,3 +1,4 @@
 ESP-NOW Receiver WS80 Ultrasonic
 
-![IMG_0462](https://github.com/user-attachments/assets/27ec9f34-ce44-4bc9-ad7b-a868948ede07)
+
+![IMG_0472](https://github.com/user-attachments/assets/68bc513d-4724-4fdf-ac53-31cb60663794)
