@@ -2,8 +2,16 @@
 #include <esp_now.h>
 #include <Arduino.h>
 #include "epd_driver.h"
-#include "OpenSans24B.h"
 #include "logo.h"
+#include "logo1.h"
+#include "logo2.h"
+#include "logo3.h"
+#include "logo4.h"
+#include "logo5.h"
+#include "hum.h"
+#include "titel.h"
+#include "bat.h"
+#include "qr.h"
 #include "opensans10b.h"
 #include "opensans12b.h"
 #include "opensans18b.h"
@@ -13,12 +21,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "epd_driver.h"
-#include "OpenSans24B.h"
-
 #include "esp_adc_cal.h"
 #include <Wire.h>
 #include <SPI.h>
-#include <SD.h>
+
+
+
+
 
 #ifndef BOARD_HAS_PSRAM
 #error "Please enable PSRAM, Arduino IDE -> Tools -> PSRAM -> OPI !!!"
@@ -97,7 +106,7 @@ void drawLayout() {
 
   cursor_x = 120;
   cursor_y = 60;
-  writeln((GFXfont *)&OpenSans24B, "....KWind WS80 ON E-PAPER....", &cursor_x, &cursor_y, NULL);
+  //writeln((GFXfont *)&OpenSans24B, "....KWind WS80 ON E-PAPER....", &cursor_x, &cursor_y, NULL);
   // Clear the framebuffer
   memset(framebuffer, 0, sizeof(framebuffer));
 
@@ -108,7 +117,7 @@ void drawLayout() {
   // Draw multiple lines to create the "fat" line
   for (int i = 0; i < line_thickness; i++) {
     epd_draw_hline(0, fixed_y + i, EPD_WIDTH - 0, 0, framebuffer);  // Draw a line at y + offset
-    epd_draw_hline(0, 460 + i, EPD_WIDTH - 0, 0, framebuffer);      // Draw a line at y + offset
+    epd_draw_hline(0, 480 + i, EPD_WIDTH - 0, 0, framebuffer);      // Draw a line at y + offset
   }
 
   // Display the updated framebuffer
@@ -201,16 +210,108 @@ void refreshData() {
   cursor_y = 360 + custom_y;  // Starting Y position within the area
   writeln((GFXfont *)&OpenSans24B, BatVoltage, &cursor_x, &cursor_y, NULL);
   delay(1000);
-  /*
+ ///*
+ Rect_t areat = {
+  .x = 130,
+  .y = 0,  //titel
+.width = titel_width,
+  .height = titel_height,
+};
+
+epd_draw_grayscale_image(areat, (uint8_t *)titel_data);
+epd_draw_image(areat, (uint8_t *)titel_data, BLACK_ON_WHITE);
+
+
   Rect_t area = {
-        .x = 220,
-        .y = 40,
-      .width = logo_width,
-        .height = logo_height,
+        .x = 700,
+        .y = 80,  //Kwind logo
+      .width = logo1_width,
+        .height = logo1_height,
    };
-    epd_draw_grayscale_image(area, (uint8_t *)logo_data);
-    epd_draw_image(area, (uint8_t *)logo_data, BLACK_ON_WHITE);
-    */
+
+   epd_draw_grayscale_image(area, (uint8_t *)logo1_data);
+  epd_draw_image(area, (uint8_t *)logo1_data, BLACK_ON_WHITE);
+
+
+
+  Rect_t areaqr = {
+    .x = 700,
+    .y = 160,
+  .width = qr_width,
+    .height = qr_height,
+};
+
+epd_draw_grayscale_image(areaqr, (uint8_t *)qr_data);
+epd_draw_image(areaqr, (uint8_t *)qr_data, BLACK_ON_WHITE);
+
+
+  Rect_t areap2 = {
+    .x = 760,
+    .y = 380,  //ecowitt logo
+  .width = logo2_width,
+    .height = logo2_height,
+};
+
+epd_draw_grayscale_image(areap2, (uint8_t *)logo2_data);
+epd_draw_image(areap2, (uint8_t *)logo2_data, BLACK_ON_WHITE);
+
+Rect_t areap3 = { //direction
+  .x = 310,
+  .y = 190,
+.width = logo3_width,
+  .height = logo3_height,
+};
+
+epd_draw_grayscale_image(areap3, (uint8_t *)logo3_data);
+epd_draw_image(areap3, (uint8_t *)logo3_data, BLACK_ON_WHITE);
+
+Rect_t areap4 = { //wind
+  .x = 315,
+  .y = 110,
+.width = logo4_width,
+  .height = logo4_height,
+};
+
+epd_draw_grayscale_image(areap4, (uint8_t *)logo4_data);
+epd_draw_image(areap4, (uint8_t *)logo4_data, BLACK_ON_WHITE);
+
+
+
+
+Rect_t areap5 = {
+  .x = 330,
+  .y = 290,
+.width = logo5_width,
+  .height = logo5_height,
+};
+
+epd_draw_grayscale_image(areap5, (uint8_t *)logo5_data);
+epd_draw_image(areap5, (uint8_t *)logo5_data, BLACK_ON_WHITE);
+
+
+Rect_t areap6 = {
+  .x = 330,
+  .y = 345,
+.width = hum_width,
+  .height = hum_height,
+};
+
+epd_draw_grayscale_image(areap6, (uint8_t *)hum_data);
+epd_draw_image(areap6, (uint8_t *)hum_data, BLACK_ON_WHITE);
+
+Rect_t areap7 = {
+  .x = 330,
+  .y = 400,
+.width = bat_width,
+  .height = bat_height,
+};
+
+epd_draw_grayscale_image(areap7, (uint8_t *)bat_data);
+epd_draw_image(areap7, (uint8_t *)bat_data, BLACK_ON_WHITE);
+
+
+
+   // */
 }
 
 
