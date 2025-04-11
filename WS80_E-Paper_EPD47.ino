@@ -28,7 +28,7 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>  // MQTT library
 
-const char* mqtt_server = "1xxxxxxxxx";  // ad adress
+const char* mqtt_server = "152.xxxxxxx";  // 
 const char* mqtt_topic = "KWind/data/WS80_Lora";
 
 WiFiClient espClient;
@@ -134,7 +134,8 @@ void setup() {
 
   epd_poweron();
   epd_clear();
-
+  drawLayout();
+  delay(1000);
   WiFi.mode(WIFI_STA);
   localMac = WiFi.macAddress();
   Serial.print("📡 MAC: ");
@@ -153,7 +154,7 @@ void setup() {
     esp_now_register_recv_cb(onDataRecv);
   }
 
-  drawLayout();
+ 
   delay(8000);  // layout boxes and labels once
                 // initial blank/empty data
                 WiFi.begin("KWindMobile", "12345678");  // Replace with actual SSID/pass
@@ -186,9 +187,10 @@ void setup() {
 void drawLayout() {
   // Initial display text, labels, and empty areas
 
-  cursor_x = 120;
-  cursor_y = 60;
-  //writeln((GFXfont *)&OpenSans24B, "....KWind WS80 ON E-PAPER....", &cursor_x, &cursor_y, NULL);
+  cursor_x = 440;
+  cursor_y = 520;
+  //
+  writeln((GFXfont *)&OpenSans12B, (useMQTT ?"MQTT ON":"ESP-NOW"), &cursor_x, &cursor_y, NULL);
   // Clear the framebuffer
   memset(framebuffer, 0, sizeof(framebuffer));
 
@@ -230,70 +232,8 @@ void drawLayout() {
   writeln((GFXfont *)&OpenSans24B, "Bat             :", &cursor_x, &cursor_y, NULL);
 
   epd_draw_rect(10, (10, EPD_HEIGHT), (10, 60), (10, 120), 0, framebuffer);
-}
-
-void refreshData() {
-
-  // Area 1: Update Wind Speed
-  Rect_t area1 = { 440, 20 + custom_y, .width = 220, .height = 50 };
-  epd_clear_area(area1);  // Clear previous data in the Wind Speed area
-  char windSpeed[16];
-  snprintf(windSpeed, sizeof(windSpeed), "%.1f    knt", receivedData.windSpeed);
-  cursor_x = 450;            // Starting X position for values
-  cursor_y = 60 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, windSpeed, &cursor_x, &cursor_y, NULL);
-
-
-  // Area 2: Update Gust Speed
-  Rect_t area2 = { 440, 80 + custom_y, .width = 220, .height = 50 };
-  epd_clear_area(area2);  // Clear previous data in the Gust Speed area
-  char gustSpeed[16];
-  snprintf(gustSpeed, sizeof(gustSpeed), "%.1f    knt", receivedData.windGust);
-  cursor_x = 450;             // Starting X position for values
-  cursor_y = 120 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, gustSpeed, &cursor_x, &cursor_y, NULL);
-
-
-  // Area 3: Update Wind Direction
-  Rect_t area3 = { 440, 140 + custom_y, .width = 260, .height = 50 };
-  epd_clear_area(area3);  // Clear previous data in the Wind Direction area
-  char windDirection[16];
-  snprintf(windDirection, sizeof(windDirection), "%d°  (%s)", receivedData.windDir, getCardinalDirection(receivedData.windDir).c_str());
-  cursor_x = 450;             // Starting X position for values
-  cursor_y = 180 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, windDirection, &cursor_x, &cursor_y, NULL);
-
-
-  //Area 4: Update Temperature
-  Rect_t area4 = { 440, 200 + custom_y, .width = 220, .height = 50 };
-  epd_clear_area(area4);  // Clear previous data in the Temperature area
-  char temperature[16];
-  snprintf(temperature, sizeof(temperature), "%.1f   °C", receivedData.temperature);
-  cursor_x = 450;             // Starting X position for values
-  cursor_y = 240 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, temperature, &cursor_x, &cursor_y, NULL);
-
-
-  // Area 5: Humidity
-  Rect_t area5 = { 440, 260 + custom_y, .width = 220, .height = 50 };
-  epd_clear_area(area5);  // Clear previous data in the Weather Status area
-  char humidity[16];
-  snprintf(humidity, sizeof(humidity), "%.0f       %%", receivedData.humidity);
-  cursor_x = 450;             // Starting X position for values
-  cursor_y = 300 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, humidity, &cursor_x, &cursor_y, NULL);
-
-  // Area 5: Batt
-  Rect_t area6 = { 440, 320 + custom_y, .width = 220, .height = 50 };
-  epd_clear_area(area6);  // Clear previous data in the Weather Status area
-  char BatVoltage[16];
-  snprintf(BatVoltage, sizeof(BatVoltage), "%.2f    V", receivedData.BatVoltage);
-  cursor_x = 450;             // Starting X position for values
-  cursor_y = 360 + custom_y;  // Starting Y position within the area
-  writeln((GFXfont *)&OpenSans24B, BatVoltage, &cursor_x, &cursor_y, NULL);
-  delay(1000);
- ///*
- Rect_t areat = {
+///*
+Rect_t areat = {
   .x = 130,
   .y = 0,  //titel
 .width = titel_width,
@@ -358,8 +298,6 @@ epd_draw_grayscale_image(areap4, (uint8_t *)logo4_data);
 epd_draw_image(areap4, (uint8_t *)logo4_data, BLACK_ON_WHITE);
 
 
-
-
 Rect_t areap5 = {
   .x = 330,
   .y = 290,
@@ -393,6 +331,69 @@ epd_draw_image(areap7, (uint8_t *)bat_data, BLACK_ON_WHITE);
 
 
 
+}
+
+void refreshData() {
+  
+  // Area 1: Update Wind Speed
+  Rect_t area1 = { 440, 20 + custom_y, .width = 220, .height = 50 };
+  epd_clear_area(area1);  // Clear previous data in the Wind Speed area
+  char windSpeed[16];
+  snprintf(windSpeed, sizeof(windSpeed), "%.1f    knt", receivedData.windSpeed);
+  cursor_x = 450;            // Starting X position for values
+  cursor_y = 60 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, windSpeed, &cursor_x, &cursor_y, NULL);
+
+
+  // Area 2: Update Gust Speed
+  Rect_t area2 = { 440, 80 + custom_y, .width = 220, .height = 50 };
+  epd_clear_area(area2);  // Clear previous data in the Gust Speed area
+  char gustSpeed[16];
+  snprintf(gustSpeed, sizeof(gustSpeed), "%.1f    knt", receivedData.windGust);
+  cursor_x = 450;             // Starting X position for values
+  cursor_y = 120 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, gustSpeed, &cursor_x, &cursor_y, NULL);
+
+
+  // Area 3: Update Wind Direction
+  Rect_t area3 = { 440, 140 + custom_y, .width = 260, .height = 50 };
+  epd_clear_area(area3);  // Clear previous data in the Wind Direction area
+  char windDirection[16];
+  snprintf(windDirection, sizeof(windDirection), "%d°  (%s)", receivedData.windDir, getCardinalDirection(receivedData.windDir).c_str());
+  cursor_x = 450;             // Starting X position for values
+  cursor_y = 180 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, windDirection, &cursor_x, &cursor_y, NULL);
+
+
+  //Area 4: Update Temperature
+  Rect_t area4 = { 440, 200 + custom_y, .width = 220, .height = 50 };
+  epd_clear_area(area4);  // Clear previous data in the Temperature area
+  char temperature[16];
+  snprintf(temperature, sizeof(temperature), "%.1f   °C", receivedData.temperature);
+  cursor_x = 450;             // Starting X position for values
+  cursor_y = 240 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, temperature, &cursor_x, &cursor_y, NULL);
+
+
+  // Area 5: Humidity
+  Rect_t area5 = { 440, 260 + custom_y, .width = 220, .height = 50 };
+  epd_clear_area(area5);  // Clear previous data in the Weather Status area
+  char humidity[16];
+  snprintf(humidity, sizeof(humidity), "%.0f       %%", receivedData.humidity);
+  cursor_x = 450;             // Starting X position for values
+  cursor_y = 300 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, humidity, &cursor_x, &cursor_y, NULL);
+
+  // Area 5: Batt
+  Rect_t area6 = { 440, 320 + custom_y, .width = 220, .height = 50 };
+  epd_clear_area(area6);  // Clear previous data in the Weather Status area
+  char BatVoltage[16];
+  snprintf(BatVoltage, sizeof(BatVoltage), "%.2f    V", receivedData.BatVoltage);
+  cursor_x = 450;             // Starting X position for values
+  cursor_y = 360 + custom_y;  // Starting Y position within the area
+  writeln((GFXfont *)&OpenSans24B, BatVoltage, &cursor_x, &cursor_y, NULL);
+  delay(1000);
+ 
    // */
 }
 
@@ -412,7 +413,8 @@ void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
     Serial.printf("💧 Humidity: %.1f%%\n", receivedData.humidity);
     Serial.printf("🔋 Battery: %.2f V\n", receivedData.BatVoltage);
     delay(2000);
-    refreshData();  // Refresh display with new data
+    // Refresh display with new data
+    refreshData(); 
   } else {
     Serial.println("⚠️ Invalid data size. Ignoring packet.");
   }
