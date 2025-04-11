@@ -33,7 +33,7 @@
 
 
 // Choose method: true = MQTT, false = ESP-NOW
-bool useMQTT = true;  
+bool useMQTT = false;  
 const char* mqtt_server = "152.xxxxxxxx";  
 
 
@@ -56,25 +56,36 @@ uint8_t *framebuffer;
 
 
 
-struct struct_message {
+// Set this to 1 if using MQTT, 0 if not
+
+
+struct mqtt_message {
   int windDir;
   float windSpeed;
   float windGust;
   float temperature;
- float humidity;  // change for WS80 LOARA
- //String humidity;    // Helium WS85
+  float humidity;
   float BatVoltage;
   String model;
   String Id;
-  String name; //  `data["name"]`
-  
+  String name;
+};
+
+struct espnow_message {
+  int windDir;
+  float windSpeed;
+  float windGust;
+  float temperature;
+  float humidity;
+  float BatVoltage;
 };
 
 
+mqtt_message receivedData;
+// or
 
 
 
-struct_message receivedData;
 // === UI Positions ===
 int cursor_x = 0;
 int cursor_y = 0;
@@ -143,7 +154,7 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
   } else {
     data = doc.as<JsonObject>();
   }
-
+ 
   if (topicStr == "helium/data") {
     receivedData.model       = data["model"] | "";
     receivedData.Id          = data["id"] | "";
@@ -158,7 +169,7 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
     receivedData.BatVoltage  = mV / 1000.0; // convert mV to volts
 
     Serial.println("✅ Matched Helium topic");
-
+ 
   } else if (topicStr == "KWind/data/WS80_Lora") {
     receivedData.model       = data["model"] | "";
     receivedData.Id          = data["id"] | "";
@@ -178,7 +189,7 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
 
   // Debug output
   Serial.println("✅ Data parsed:");
-  Serial.print("ID: "); Serial.println(receivedData.Id);
+ Serial.print("ID: "); Serial.println(receivedData.Id);
   Serial.print("Model: "); Serial.println(receivedData.model);
   Serial.print("Wind Dir: "); Serial.println(receivedData.windDir);
   Serial.print("Wind Speed: "); Serial.println(receivedData.windSpeed);
@@ -483,8 +494,8 @@ void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
   Serial.println("\n📩 Data Received:");
   Serial.printf("Length: %d\n", len);
 
-  if (len == sizeof(struct_message)) {
-    memcpy(&receivedData, data, sizeof(struct_message));
+  if (len == sizeof(espnow_message)) {
+    memcpy(&receivedData, data, sizeof(espnow_message));
 
     Serial.printf("🧭 WindDir: %d° (%s)\n", receivedData.windDir, getCardinalDirection(receivedData.windDir).c_str());
     Serial.printf("💨 Wind: %.1f km/h\n", receivedData.windSpeed);
