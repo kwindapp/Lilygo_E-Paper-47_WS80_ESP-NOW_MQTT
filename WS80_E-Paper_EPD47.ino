@@ -1,6 +1,10 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <Arduino.h>
+#include "opensans10b.h"
+#include <ArduinoJson.h>
+#include <PubSubClient.h>  // MQTT library
+
 #include "epd_driver.h"
 #include "opensans12b.h"
 #include "opensans18b.h"
@@ -14,19 +18,18 @@
 #include <Wire.h>
 #include <SPI.h>
 
+#include "titel.h"
 #include "logo.h"
 #include "logo1.h"
 #include "logo2.h"
-#include "logo3.h"
-#include "logo4.h"
-#include "logo5.h"
-#include "hum.h"
-#include "titel.h"
-#include "bat.h"
 #include "qr.h"
-#include "opensans10b.h"
-#include <ArduinoJson.h>
-#include <PubSubClient.h>  // MQTT library
+
+#include "dir.h"
+#include "wind.h"
+#include "temp.h"
+#include "hum.h"
+#include "bat.h"
+
 
 const char* mqtt_server = "152.xxxxxxx";  // 
 const char* mqtt_topic = "KWind/data/WS80_Lora";
@@ -258,7 +261,7 @@ epd_draw_image(areat, (uint8_t *)titel_data, BLACK_ON_WHITE);
 
   Rect_t areaqr = {
     .x = 700,
-    .y = 160,
+    .y = 160,   //qr code
   .width = qr_width,
     .height = qr_height,
 };
@@ -280,33 +283,33 @@ epd_draw_image(areap2, (uint8_t *)logo2_data, BLACK_ON_WHITE);
 Rect_t areap3 = { //direction
   .x = 310,
   .y = 190,
-.width = logo3_width,
-  .height = logo3_height,
+.width = dir_width,
+  .height = dir_height,
 };
 
-epd_draw_grayscale_image(areap3, (uint8_t *)logo3_data);
-epd_draw_image(areap3, (uint8_t *)logo3_data, BLACK_ON_WHITE);
+epd_draw_grayscale_image(areap3, (uint8_t *)dir_data);
+epd_draw_image(areap3, (uint8_t *)dir_data, BLACK_ON_WHITE);
 
 Rect_t areap4 = { //wind
   .x = 315,
   .y = 110,
-.width = logo4_width,
-  .height = logo4_height,
+.width = wind_width,
+  .height = wind_height,
 };
 
-epd_draw_grayscale_image(areap4, (uint8_t *)logo4_data);
-epd_draw_image(areap4, (uint8_t *)logo4_data, BLACK_ON_WHITE);
+epd_draw_grayscale_image(areap4, (uint8_t *)wind_data);
+epd_draw_image(areap4, (uint8_t *)wind_data, BLACK_ON_WHITE);
 
 
 Rect_t areap5 = {
   .x = 330,
   .y = 290,
-.width = logo5_width,
-  .height = logo5_height,
+.width = temp_width,
+  .height = temp_height,
 };
 
-epd_draw_grayscale_image(areap5, (uint8_t *)logo5_data);
-epd_draw_image(areap5, (uint8_t *)logo5_data, BLACK_ON_WHITE);
+epd_draw_grayscale_image(areap5, (uint8_t *)temp_data);
+epd_draw_image(areap5, (uint8_t *)temp_data, BLACK_ON_WHITE);
 
 
 Rect_t areap6 = {
