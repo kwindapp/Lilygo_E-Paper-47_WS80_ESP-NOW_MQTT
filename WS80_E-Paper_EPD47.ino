@@ -34,7 +34,7 @@
 
 // Choose method: true = MQTT, false = ESP-NOW
 bool useMQTT = true;  
-const char* mqtt_server = "152.xxxxxxx";  
+const char* mqtt_server = "152.xxxxxxxx";  
 
 
 // Topic
@@ -61,11 +61,13 @@ struct struct_message {
   float windSpeed;
   float windGust;
   float temperature;
-  float humidity;
+ float humidity;  // change for WS80 LOARA
+ //String humidity;    // Helium WS85
   float BatVoltage;
   String model;
   String Id;
-  String name; // ← Don't forget this if you're using `data["name"]`
+  String name; //  `data["name"]`
+  
 };
 
 
@@ -142,24 +144,24 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
     data = doc.as<JsonObject>();
   }
 
-  // 🌐 Helium
   if (topicStr == "helium/data") {
-    receivedData.model       = data["model"] | "FakeModel";
-    receivedData.Id          = data["id"] | "FakeId";
-    receivedData.name        = data["name"] | "FakeName";
+    receivedData.model       = data["model"] | "";
+    receivedData.Id          = data["id"] | "";
+    receivedData.name        = data["name"] | "";
     receivedData.windDir     = data["wind_dir_deg"] | 0;
     receivedData.windSpeed   = data["wind_avg_m_s"] | 0.0;
     receivedData.windGust    = data["wind_max_m_s"] | 0.0;
     receivedData.temperature = data["temperature_C"] | 0.0;
-    receivedData.humidity    = data["battery_ok"] | 0.0;
-    receivedData.BatVoltage  = data["battery_mV"] | 0.0;
+    receivedData.humidity    = data["0"] | 0.0;
+    //receivedData.humidity    = "N/A"; // 👈 Set humidity to "N/A" for Helium WS85
+    int mV = data["battery_mV"] | 0;
+    receivedData.BatVoltage  = mV / 1000.0; // convert mV to volts
 
     Serial.println("✅ Matched Helium topic");
 
-  // 📡 WS80 LoRa
   } else if (topicStr == "KWind/data/WS80_Lora") {
-    receivedData.model       = data["model"] | "WS80";
-    receivedData.Id          = data["id"] | "WS80_ID";
+    receivedData.model       = data["model"] | "";
+    receivedData.Id          = data["id"] | "";
     receivedData.windDir     = data["wind_dir_deg"] | 0;
     receivedData.windSpeed   = data["wind_avg_m_s"] | 0.0;
     receivedData.windGust    = data["wind_max_m_s"] | 0.0;
@@ -174,7 +176,7 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
     return;
   }
 
-  // ✅ Output parsed data
+  // Debug output
   Serial.println("✅ Data parsed:");
   Serial.print("ID: "); Serial.println(receivedData.Id);
   Serial.print("Model: "); Serial.println(receivedData.model);
@@ -183,7 +185,7 @@ void mqttCallback(char* topic, byte* message, unsigned int length) {
   Serial.print("Wind Gust: "); Serial.println(receivedData.windGust);
   Serial.print("Temp: "); Serial.println(receivedData.temperature);
   Serial.print("Humidity: "); Serial.println(receivedData.humidity);
-  Serial.print("Battery: "); Serial.println(receivedData.BatVoltage);
+  Serial.print("Battery: "); Serial.println(receivedData.BatVoltage, 2);
 
   refreshData();
 }
