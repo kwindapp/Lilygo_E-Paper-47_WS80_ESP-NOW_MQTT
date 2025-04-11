@@ -2,17 +2,6 @@
 #include <esp_now.h>
 #include <Arduino.h>
 #include "epd_driver.h"
-#include "logo.h"
-#include "logo1.h"
-#include "logo2.h"
-#include "logo3.h"
-#include "logo4.h"
-#include "logo5.h"
-#include "hum.h"
-#include "titel.h"
-#include "bat.h"
-#include "qr.h"
-#include "opensans10b.h"
 #include "opensans12b.h"
 #include "opensans18b.h"
 #include "opensans24b.h"
@@ -25,7 +14,28 @@
 #include <Wire.h>
 #include <SPI.h>
 
+#include "logo.h"
+#include "logo1.h"
+#include "logo2.h"
+#include "logo3.h"
+#include "logo4.h"
+#include "logo5.h"
+#include "hum.h"
+#include "titel.h"
+#include "bat.h"
+#include "qr.h"
+#include "opensans10b.h"
+#include <ArduinoJson.h>
+#include <PubSubClient.h>  // MQTT library
 
+const char* mqtt_server = "1xxxxxxxxx";  // ad adress
+const char* mqtt_topic = "KWind/data/WS80_Lora";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// Choose method: true = MQTT, false = ESP-NOW
+bool useMQTT = true;  
 
 
 
@@ -66,6 +76,48 @@ String getCardinalDirection(int windDir) {
   return "N";
 }
 
+void reconnectMQTT() {
+  while (!client.connected()) {
+    Serial.print("🔄 Connecting to MQTT...");
+    if (client.connect("ESP32_Client")) {
+      Serial.println("✅ connected");
+      client.subscribe(mqtt_topic);
+    } else {
+      Serial.print("❌ failed, rc=");
+      Serial.print(client.state());
+      delay(2000);
+    }
+  }
+}
+
+void mqttCallback(char* topic, byte* message, unsigned int length) {
+  Serial.print("📨 MQTT message: ");
+  String payload;
+  for (int i = 0; i < length; i++) {
+    payload += (char)message[i];
+  }
+  Serial.println(payload);
+
+  // Example expected JSON payload:
+   //{"windDir":90,"windSpeed":12.3,"windGust":20.1,"temperature":25.4,"humidity":65,"BatVoltage":3.7}
+
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, payload);
+  if (!error) {
+    receivedData.windDir = doc["model"];
+    receivedData.windSpeed = doc["Id"];
+    receivedData.windDir = doc["wind_dir_deg"];
+    receivedData.windSpeed = doc["windSpeed_m_s"];
+    receivedData.windGust = doc["windGust_m_s"];
+    receivedData.temperature = doc["temperature_C"];
+    receivedData.humidity = doc["Humi"];
+    receivedData.BatVoltage = doc["BatVoltage"];
+    refreshData();
+  } else {
+    Serial.println("⚠️ Failed to parse JSON");
+  }
+}
+
 
 // === SETUP ===
 void setup() {
@@ -88,16 +140,46 @@ void setup() {
   Serial.print("📡 MAC: ");
   Serial.println(localMac);
 
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("❌ ESP-NOW init failed!");
-    return;
+  if (!useMQTT) {
+    WiFi.mode(WIFI_STA);
+    localMac = WiFi.macAddress();
+    Serial.print("📡 MAC: ");
+    Serial.println(localMac);
+  
+    if (esp_now_init() != ESP_OK) {
+      Serial.println("❌ ESP-NOW init failed!");
+      return;
+    }
+    esp_now_register_recv_cb(onDataRecv);
   }
-
-  esp_now_register_recv_cb(onDataRecv);
 
   drawLayout();
   delay(8000);  // layout boxes and labels once
                 // initial blank/empty data
+                WiFi.begin("KWindMobile", "12345678");  // Replace with actual SSID/pass
+                while (WiFi.status() != WL_CONNECTED) {
+                  delay(500);
+                  Serial.print(".");
+                }
+                Serial.println("\n✅ WiFi connected");
+                
+                if (useMQTT) {
+                  client.setServer(mqtt_server, 1883);
+                  client.setCallback(mqttCallback);
+                } else {
+                  WiFi.mode(WIFI_STA);
+                  localMac = WiFi.macAddress();
+                  Serial.print("📡 MAC: ");
+                  Serial.println(localMac);
+                
+                  if (esp_now_init() != ESP_OK) {
+                    Serial.println("❌ ESP-NOW init failed!");
+                    return;
+                  }
+                
+                  esp_now_register_recv_cb(onDataRecv);
+                }
+                Serial.println(useMQTT ? "📶 MQTT mode enabled" : "📡 ESP-NOW mode enabled");
 }
 
 
@@ -340,6 +422,13 @@ void onDataRecv(const uint8_t *mac_addr, const uint8_t *data, int len) {
 
 // === MAIN LOOP ===
 void loop() {
+  if (useMQTT) {
+    if (!client.connected()) {
+      reconnectMQTT();
+    }
+    client.loop();
+  }
 
-  delay(1000);  // just idle
+  delay(1000);  // Idle
 }
+ 
